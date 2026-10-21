@@ -15,14 +15,16 @@ All UI assets, public fonts and the fifteen wallpapers are bundled. This private
 - `app/index.html` loads the device adapter, gallery/font/palette catalogues, `assets/icons/metrics.js` and `main.js`, with `style.css`.
 - `main.js` owns the List and Dock layouts, panel stack, focus, preferences and wallpaper timers. `device.js` owns installed-app discovery and Tizen calls. Keep device details in that adapter.
 - The logical stage is 1920 x 1080, scaled uniformly to the viewport. Check at 1920 x 1080 and 1280 x 720. Glass geometry and cached materials must stay aligned.
-- Preferences use localStorage key `cleanframe.home.v1`, with a fallback read from `cleanframe.shore.v1`. Legacy fields are `dock`, `wallpaper`, `mode`, `lastApp` and `theme`. The 0.6 migration preserves app order, wallpaper, rotation and selection. Legacy `list` becomes Dark / List / Type; `shore` and `grid` become Photo / Dock / Glass. Appearance axes are stored separately. A saved dynamic app keeps its real app ID and name; discovery refreshes the installed catalogue. Keep migration checks when changing this format.
+- This fork’s preferences use localStorage key `cleanframe.yitzi.home.v1`, with a fallback read from `cleanframe.shore.v1`. Legacy fields are `dock`, `wallpaper`, `mode`, `lastApp` and `theme`. The 0.6 migration preserves app order, wallpaper, rotation and selection. Legacy `list` becomes Dark / List / Type; `shore` and `grid` become Photo / Dock / Glass. Appearance axes are stored separately. A saved dynamic app keeps its real app ID and name; discovery refreshes the installed catalogue. Keep migration checks when changing this format.
 - `window.ShoreQA.state()` and `.where()` expose state and focus for browser tests. `minuteMs` can shorten rotation intervals in an isolated browser test.
 
-The tested target is the Tizen 9.0 TV in [TV status](tv-status.md). The manifest's `required_version="6.5"` is a package declaration, not proof that Tizen 6.5 has been tested. The exact TV Chromium/WebKit engine version has not been recorded. Keep runtime JavaScript ES5-compatible and verify any new DOM/CSS API on the target before claiming support. `node --check` checks syntax for Node; it does not enforce ES5 or TV API availability.
+This fork has been installed and physically observed on the Tizen 6.5 LS03B described in the README. The Tizen 9.0 device in [TV status](tv-status.md) is the separate upstream reference. The exact TV Chromium/WebKit engine version has not been recorded. Keep runtime JavaScript ES5-compatible and verify any new DOM/CSS API on the target before claiming support. `node --check` checks syntax for Node; it does not enforce ES5 or TV API availability.
 
 Keep material rendering in the development tools. See [asset generation](assets.md) and [testing](testing.md).
 
 ## Local TV tools and signing
+
+The older setup descriptions below include upstream conventions. This fork uses `scripts/package-local.py`, `.local/signing.json` (`profiles_path` and `profile`), and the saved official Samsung SDK profile. It does not create certificates or use the older script’s password-file flow. See the README for current commands.
 
 This Mac's setup lives under `.local/` and is excluded from Git:
 
@@ -67,6 +69,8 @@ For developer access, connect the TV and Mac to the same network, enable Develop
 
 ## Native Home and recovery
 
+**Upstream reference only:** the commands below target the original author’s TV and identity. This fork’s LS03B recovery toolkit is private and separate. Do not execute these commands on the LS03B or another TV; consult the README’s compatibility and recovery notes.
+
 Native Home/startup was configured separately from the app installer. Physical Home from Netflix is confirmed. The one-shot helper runs as the SDK user. See scripts/native-home/README.md and docs/tv-status.md for the tested firmware and pending visual checks.
 
 Query with `python3 scripts/native-home/run.py query`. Restore the saved pre-integration Home/startup values with `python3 scripts/native-home/run.py restore`. The private baseline is `.local/native-home/original.json`; preserve it and do not replace it with the applied state. The legacy `.local/native-home/run.py` command is also retained. Restore before uninstalling CleanFrame or changing its stable app identity.
@@ -78,3 +82,15 @@ DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 DOTNET_CLI_HOM
 ```
 
 The helper's output is not packaged inside the web app. Keep the original values, compiler, runtime output and all device diagnostics ignored.
+
+## Personal photos, weather and app folders
+
+`assets/local-config.js` in shared source is empty. A private build/preview can replace it from `.local/personal/overlay/`; the public export excludes that overlay. Never move family photographs or location defaults into `app/` or Git. `scripts/personal_assets.py` validates an allowlist and packages only photo files referenced by the current private catalogue.
+
+Export a selected Photos album as JPEG into a local folder, then run `python3 scripts/import-family-photos.py /absolute/path/to/export`. This preserves originals, generates 1920×1080 TV JPEGs without EXIF, and retains complete portrait photos using blurred side fills. Rebuild/sign/install with the existing local tools to update the TV. This is an explicit import workflow, not automatic Apple Photos synchronization. Family-photo rotation stays within the family collection. Standard wallpapers remain selectable.
+
+Weather is configured under Settings → Weather using a remote-friendly US ZIP keypad. Fahrenheit/Celsius, Save, Back and Turn off are supported. Location lookup and forecasts use the two allowlisted Open-Meteo endpoints. Location settings/cache live on the device; public defaults make no weather request. Refreshes are bounded, stop while hidden, and mark stale cached data. No API key is required. The owner confirmed the photo background and weather on the LS03B after deployment on 2026-10-20.
+
+Adults is a folder with Netflix, HBO Max, Apple TV, Paramount+ and Peacock launch targets. It can be added through All apps → Apps on Home. An app may appear both inside the folder and on the main dock. Folder grouping does not enforce parental controls; Netflix still controls profile selection.
+
+Additional checks: `node scripts/check-family-features.mjs`, `node scripts/check-personal.mjs` (uses ignored local photos), and the weather tests included in `npm run check`. Preserve native Home recovery and installed signing identity during updates.

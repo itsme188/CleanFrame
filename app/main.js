@@ -14,18 +14,27 @@
   var FULL = 'Home holds nine apps. Remove one first.', LAST = 'Home needs one app';
 
   var PRIMARY_APPS = [
+    { id: 'fios', name: 'Fios TV', mark: true, action: 'input', input: 1 },
+    { id: 'disneyplus', name: 'Disney+', mark: true, appId: 'MCmYXNxgcu.DisneyPlus' },
+    { id: 'primevideo', name: 'Prime Video', mark: true, appId: 'org.tizen.primevideo' },
+    { id: 'playground', name: 'Playground', mark: true, action: 'input', input: 4 },
+    { id: 'art', name: 'Art', mark: true, action: 'art' },
+    { id: 'adults', name: 'Adults', mark: true, action: 'folder', children: ['netflix', 'hbomax', 'appletv', 'paramount', 'peacock'] },
+    { id: 'hbomax', name: 'HBO Max', mark: true, appId: '5b8c3eb16b.BeamCTVDev' },
+    { id: 'paramount', name: 'Paramount+', mark: true, appId: 'rJyOSqC6Up.CBSAllAccess' },
+    { id: 'peacock', name: 'Peacock', mark: true, appId: 'gzcc4LRFBF.Peacock' },
     { id: 'stremio', name: 'Stremio', mark: true, appId: 'IkWsFHtOY9.Stremio' },
     { id: 'netflix', name: 'Netflix', mark: true, appId: 'org.tizen.netflix-app' },
-    { id: 'disneyplus', name: 'Disney+', mark: true, appId: 'MCmYXNxgcu.DisneyPlus' },
     { id: 'youtube', name: 'YouTube', mark: true, appId: '9Ur5IzDKqV.TizenYouTube' },
     { id: 'appletv', name: 'Apple TV', mark: true, appId: 'com.samsung.tv.aria-video' },
-    { id: 'primevideo', name: 'Prime Video', mark: true, appId: 'org.tizen.primevideo' },
     { id: 'abciview', name: 'ABC iview', mark: true, appId: 'mWK87Xghap.ABCiview' },
     { id: 'sbs', name: 'SBS On Demand', mark: true, appId: 'OyE7OuxlUi.SBSOnDemand' },
     { id: 'applemusic', name: 'Apple Music', mark: true, appId: 'org.tizen.apple.apple-music' }
   ];
   var PRIMARY = PRIMARY_APPS.map(function (a) { return a.id; }), APPS = PRIMARY_APPS.slice(), ALPHA = [];
   var WALLS = window.CleanFrameWallpapers || [{ id: 'misty', name: 'Misty coast', tone: 'light', ut: { tr: 'mist', br: 'mist' }, frostVeil: .20 }];
+  var LOCAL = window.CleanFrameLocal || {};
+  WALLS = WALLS.concat(LOCAL.wallpapers || []);
   var ADAPTIVE_INK = window.CleanFrameAdaptiveInk || {};
   WALLS.forEach(function (w) { w.ut = w.ut || { tr: 'light', br: 'light' }; w.frostVeil = w.frostVeil || .12; });
   var MODES = [
@@ -33,7 +42,7 @@
     { id: '5', name: 'Every 5 minutes', min: 5 }, { id: '15', name: 'Every 15 minutes', min: 15 },
     { id: '60', name: 'Every hour', min: 60 }
   ];
-  var KEY = 'cleanframe.home.v1', storageOk = true, catalog = { loading: false, loaded: false, error: null, request: 0, revision: 0 };
+  var KEY = 'cleanframe.yitzi.home.v1', storageOk = true, catalog = { loading: false, loaded: false, error: null, request: 0, revision: 0 };
   var QA = window.ShoreQA = { minuteMs: window.ShoreQA && window.ShoreQA.minuteMs || 60000 };
   var FONTS = {
     manrope: { name: 'Manrope', family: 'Manrope', display: 600, ui: 500, clock: 500 },
@@ -93,9 +102,10 @@
   /* ---------- Helpers ---------- */
   function app(id) { for (var i = 0; i < APPS.length; i++) if (APPS[i].id === id) return APPS[i]; return null; }
   function wall(id) { for (var i = 0; i < WALLS.length; i++) if (WALLS[i].id === id) return WALLS[i]; return null; }
+  function rotationNext(id) { var pool = id.indexOf('family-') === 0 ? WALLS.filter(function (w) { return w.id.indexOf('family-') === 0; }) : WALLS.filter(function (w) { return w.id.indexOf('family-') !== 0; }); var i = pool.map(function (w) { return w.id; }).indexOf(id); return pool[(i + 1) % pool.length].id; }
   function wallIndex(id) { for (var i = 0; i < WALLS.length; i++) if (WALLS[i].id === id) return i; return 0; }
   function frostClass(w) { var i = [.12, .20, .30, .36, .44].indexOf(w.frostVeil); return i > 0 ? ' fv-' + (i + 1) : ''; }
-  function wallClasses(w) { return frostClass(w) + (w.listColumn ? ' lc-' + w.listColumn : '') + (w.dockQuiet ? ' db-quiet' : '') + (w.clockMist ? ' tl-mist' : ''); }
+  function wallClasses(w) { return (w.family ? 'family-photo ' : '') + frostClass(w) + (w.listColumn ? ' lc-' + w.listColumn : '') + (w.dockQuiet ? ' db-quiet' : '') + (w.clockMist ? ' tl-mist' : ''); }
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
   function without(list, id) { return list.filter(function (x) { return x !== id; }); }
   function same(a, b) { if (a.length !== b.length) return false; for (var i = 0; i < a.length; i++) if (a[i] !== b[i]) return false; return true; }
@@ -338,7 +348,7 @@
       if (!app(id) && id.indexOf('.') > 0) APPS.push({ id: id, appId: id, name: id.split('.').pop(), mark: false });
       if (app(id)) h.push(id);
     });
-    if (!h.length) h = PRIMARY.slice();
+    if (!h.length) h = ['fios', 'disneyplus', 'primevideo', 'playground', 'art'];
     (Array.isArray(s.recent) ? s.recent : []).forEach(function (id) { if (safeId(id) && app(id) && h.indexOf(id) < 0 && recent.indexOf(id) < 0 && recent.length < 5) recent.push(id); });
     return {
       bg: pick(modern.bg, LOOK_VALUES.bg, legacyList ? 'dark' : 'photo'), layout: pick(modern.layout, LOOK_VALUES.layout, legacyList ? 'list' : 'dock'),
@@ -346,6 +356,7 @@
       focus: pick(modern.focus, LOOK_VALUES.focus, legacyList ? 'type' : 'glass'), material: pick(modern.material, LOOK_VALUES.material, 'soft'),
       font: pick(modern.font, LOOK_VALUES.font, 'manrope'), wall: wall(modern.wall || s.wallpaper) ? modern.wall || s.wallpaper : WALLS[0].id,
       home: h, recent: recent, lastApp: h.indexOf(s.lastApp) >= 0 ? s.lastApp : h[0],
+      personalRevision: s.personalRevision || '',
       mode: pick(s.mode, MODES.map(function (m) { return m.id; }), 'fixed')
     };
   }
@@ -362,16 +373,22 @@
     return out;
   }
   function initialise() {
-    var saved = load(), initial; S.c = clean(saved); initial = next(S.c.home.slice(), S.c.recent.slice());
+    var saved = load(), initial; S.c = clean(saved);
+    if (LOCAL.revision && S.c.personalRevision !== LOCAL.revision) {
+      (LOCAL.addHome || []).forEach(function (id) { if (app(id) && S.c.home.indexOf(id) < 0 && S.c.home.length < CAP) S.c.home.push(id); });
+      if (LOCAL.wallpapers && LOCAL.wallpapers.length) { S.c.wall = LOCAL.wallpapers[0].id; S.c.bg = 'photo'; S.c.mode = '5'; }
+      S.c.personalRevision = LOCAL.revision;
+    }
+    initial = next(S.c.home.slice(), S.c.recent.slice());
     S.stack = [{ id: 'home', f: { zone: 'apps', u: 0 } }];
     S.sel = S.c.lastApp; S.selIdx = S.c.home.indexOf(S.sel);
-    if (saved && initial.mode === 'open') initial.wall = WALLS[(wallIndex(initial.wall) + 1) % WALLS.length].id;
+    if (saved && initial.mode === 'open') initial.wall = rotationNext(initial.wall);
     // Keep the old schema keys alongside the builder values for in-place updates.
     try { localStorage.setItem(KEY, JSON.stringify(serialise(initial))); S.c = initial; storageOk = true; } catch (e) { storageOk = false; }
   }
   function clearSession() { S.undo = []; S.removedAt = {}; S.note = null; S.err = null; }
   function begin() { S.note = null; }
-  function next(home, recent) { var c = lookOf(S.c); c.home = home; c.recent = recent; c.lastApp = S.c.lastApp; c.mode = S.c.mode; return c; }
+  function next(home, recent) { var c = lookOf(S.c); c.home = home; c.recent = recent; c.lastApp = S.c.lastApp; c.mode = S.c.mode; c.personalRevision = S.c.personalRevision; return c; }
   function snap() { return { home: S.c.home.slice(), recent: S.c.recent.slice() }; }
   function pushRecent(list, id) { return [id].concat(without(list, id)).slice(0, 5); }
   function write(c, label) {
@@ -459,9 +476,17 @@
   function launch(id) {
     var a = app(id), c;
     if (!a || busy) return;
+    if (a.action === 'folder') { push({id: 'apps', mode: 'folder', folder: id, top: 0, f: {zone: 'grid', i: 0, h: 0}}); return; }
     if (S.c.home.indexOf(id) >= 0) { c = next(S.c.home.slice(), S.c.recent.slice()); c.lastApp = id; write(c, 'Last app'); }
     S.press = id; S.lastLaunch = a.name;
-    perform(a.name, function (done) { FrameDevice.launchApp(a.appId, done); });
+    perform(a.name, function (done) {
+      if (a.action === 'art') { FrameDevice.art(done); return; }
+      if (a.action === 'input') {
+        FrameDevice.input(a.input, done);
+        return;
+      }
+      FrameDevice.launchApp(a.appId, done);
+    });
   }
   function refreshCatalog() {
     var request, oldFocus;
@@ -483,6 +508,7 @@
         a.name = PRIMARY.indexOf(id) >= 0 ? PRIMARY_APPS[PRIMARY.indexOf(id)].name : String(entry.name).slice(0, 160);
         ALPHA.push(id);
       });
+      ALPHA.push('adults');
       ALPHA.sort(function (a, b) { return app(a).name.toLowerCase().localeCompare(app(b).name.toLowerCase()); });
       catalog.loaded = true; catalog.error = null; catalog.revision++;
       if (top().id === 'apps' && oldFocus && ALPHA.indexOf(oldFocus) >= 0) top().f.i = ALPHA.indexOf(oldFocus);
@@ -681,8 +707,8 @@
   };
 
   /* ---------- Installed apps ---------- */
-  function appsItems() { return catalog.error ? [] : ALPHA; }
-  function appsHead() { return catalog.error ? [['retry', 'Try again', '', '']] : [['editor', 'Apps on Home', '', 'home']]; }
+  function appsItems() { return top().folder ? app(top().folder).children.filter(function (id) { return !!app(id); }) : catalog.error ? [] : ALPHA; }
+  function appsHead() { if (top().folder) return [['back', 'Back', '', 'left']]; return catalog.error ? [['retry', 'Try again', '', '']] : [['editor', 'Apps on Home', '', 'home']]; }
   V.apps = {
     sheet: true,
     norm: function (t) {
@@ -695,7 +721,7 @@
       if (k === 'back') { pop(); return; }
       if (f.zone === 'head') {
         if (k === 'down' && n) f.zone = 'grid';
-        else if (k === 'ok') { if (catalog.error) refreshCatalog(); else openEditor('apps'); }
+        else if (k === 'ok') { if (t.folder) pop(); else if (catalog.error) refreshCatalog(); else openEditor('apps'); }
         return;
       }
       if (k === 'left' && col > 0) f.i--;
@@ -821,6 +847,7 @@
       { id: 'typography', label: 'Typography', value: FONTS[S.c.font].name },
       { id: 'focus', label: 'Focus', value: VALUE_NAMES[S.c.focus] + (materialApplies() ? ', ' + VALUE_NAMES[S.c.material] : '') },
       { id: 'editor', label: 'Apps on Home', value: n + (n === 1 ? ' app' : ' apps') },
+      { id: 'weather', label: 'Weather', value: FrameWeather.config().zip || 'Set your ZIP code' },
       { id: 'samsung', label: 'Samsung', value: 'Home and TV settings' }];
   }
   function settingsIds() { return settingsRows().map(function (r) { return r.id; }); }
@@ -838,7 +865,8 @@
     point: function (t, z, i, id) { if (z === 'row' && id) { t.f.id = id; this.key(t, 'ok'); } }
   };
   function settingsOk(id) {
-    if (id === 'editor') openEditor('settings');
+    if (id === 'weather') push(FrameWeather.open());
+    else if (id === 'editor') openEditor('settings');
     else openAppearance(id);
   }
   var DETAIL_NAMES = { background: 'Background', layout: 'Layout', typography: 'Typography', focus: 'Focus', rotation: 'Rotation', samsung: 'Samsung' };
@@ -1065,7 +1093,7 @@
     return text.replace(/[0-9]/g, function (digit) { return '<span class="clock-digit">' + digit + '</span>'; });
   }
   function renderCaption(t, hs) {
-    var html = '<span class="clock">' + clockHtml() + '</span>';
+    var html = '<span class="clock">' + clockHtml() + '</span>' + FrameWeather.summary();
     if (S.c.apps !== 'icons' && hs.items[hs.i] && (S.c.layout === 'list' ? photoLabel(hs.items[hs.i].id, false).size < 88 || photoLabel(hs.items[hs.i].id, false).ellipsis : hs.zone === 'apps' && reducedDockLabel(hs.items[hs.i].id))) html += '<span class="cap-line full-name">' + esc(app(hs.items[hs.i].id).name) + '</span>';
     setHTML(caption, html);
   }
@@ -1498,7 +1526,9 @@
       return '<button type="button" tabindex="-1" class="btn' + (i === fi ? ' is-focus' : '') + (b[2] ? ' ' + b[2] : '') + '" data-z="head" data-i="' + i + '" data-action="' + prefix + '.' + b[0] + '" aria-label="' + esc(b[0] === 'undo' ? undoCaption() : b[1]) + '">' + (b[3] ? icon(b[3]) : '') + '<span>' + b[1] + '</span></button>';
     }).join('');
   }
+  V.weather = { sheet: true, norm: function () {}, key: function (t, k) { if (FrameWeather.key(t, k)) pop(); }, point: function (t, z, i) { if (z === 'weather') { t.f.i = i; this.key(t, 'ok'); } } };
   var FRAMES = {
+    weather: function () { return '<div data-slot="weather"></div>'; },
     apps: function () {
       return '<h2 class="s-title" data-slot="title"></h2><p class="s-sub" data-slot="sub"></p><div class="s-head" data-slot="head"></div>'
         + '<div class="grid-view" data-slot="view"><div class="grid-in" data-slot="grid"></div></div>'
@@ -1521,10 +1551,11 @@
     return '<span class="panel-content">' + appMark(a, 120, 72, 58) + '<span class="label">' + esc(a.name) + '</span></span><span class="state">' + state + '</span>';
   }
   var FILLS = {
+    weather: function (t, el) { setHTML(el.weather, FrameWeather.html(t)); },
     apps: function (t, el) {
       var f = t.f, items = appsItems(), n = items.length, rows = Math.ceil(n / COLS), vis = 3, row = Math.floor(f.i / COLS);
-      setHTML(el.title, 'All apps');
-      setHTML(el.sub, esc(catalog.loading ? 'Loading installed apps…' : catalog.error || (!n ? 'No installed apps found.' : '')));
+      setHTML(el.title, t.folder ? esc(app(t.folder).name) : 'All apps');
+      setHTML(el.sub, esc(t.folder ? 'Choose an app · Back returns to Home' : catalog.loading ? 'Loading installed apps…' : catalog.error || (!n ? 'No installed apps found.' : '')));
       setHTML(el.head, headButtons(appsHead(), f.zone === 'head' ? 0 : -1, 'apps'));
       el.head.className = 's-head' + (f.zone === 'head' ? ' is-awake' : '');
       if (f.zone === 'grid') { if (row < t.top) t.top = row; if (row > t.top + vis - 1) t.top = row - vis + 1; }
@@ -1756,7 +1787,7 @@
     activeSince = Date.now();
     rotationTimer = setTimeout(function () {
       pauseRotation(); activeMs = 0;
-      if (rotationActive()) setLook({ wall: WALLS[(wallIndex(S.c.wall) + 1) % WALLS.length].id }, { row: 'bg' });
+      if (rotationActive()) setLook({ wall: rotationNext(S.c.wall) }, { row: 'bg' });
     }, Math.max(10, mode().min * QA.minuteMs - activeMs));
   }
   function updateClock() {
@@ -1832,6 +1863,10 @@
     if (!k || ev.metaKey || ev.ctrlKey || ev.altKey) return;
     ev.preventDefault();
     if (k === 'ok' || k === 'back') { if (ev.repeat || heldKeys[code]) return; heldKeys[code] = true; }
+    if (FrameDevice.inputVisible()) {
+      if (k === 'back') { release(); perform('Return to Home', FrameDevice.closeInput); }
+      return;
+    }
     press(k);
   });
   document.addEventListener('keyup', function (ev) { delete heldKeys[ev.keyCode]; });
@@ -1879,4 +1914,5 @@
   initialise();
   setLook({}, { transient: true, startup: true });
   norm(); render(); fit(); focusStage(); updateClock(); syncRotation();
+  FrameWeather.init(function () { render(); });
 })();

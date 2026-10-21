@@ -1,4 +1,6 @@
-# Reference TV and verification status
+# Upstream reference TV and verification status
+
+This file retains the upstream author’s reference record; it does not describe this fork’s LS03B. See the root README for this installation’s evidence and limitations.
 
 Recorded through 20 October 2026. These results describe the maintainer's TV. Other models, firmware and operating systems need their own checks. Repo-only work must not contact the TV.
 

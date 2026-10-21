@@ -5,6 +5,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 from font_assets import font_overlay
+from personal_assets import personal_overlay
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -16,6 +17,15 @@ class PreviewServer(ThreadingHTTPServer):
 class Preview(SimpleHTTPRequestHandler):
     def send_head(self):
         route = unquote(urlsplit(self.path).path)
+        private = personal_overlay(include_private=self.server.include_private_fonts)
+        if route.startswith('/home/') and route[len('/home/'):] in private:
+            source = private[route[len('/home/'):]]
+            content = source.read_bytes()
+            self.send_response(200)
+            self.send_header('Content-Type', self.guess_type(route))
+            self.send_header('Content-Length', str(len(content)))
+            self.end_headers()
+            return io.BytesIO(content)
         if route in ['/home/assets/font-catalog.js', '/home/assets/private-fonts.css'] or route.startswith('/home/assets/private-fonts/'):
             source = font_overlay(include_private=self.server.include_private_fonts).get(route[len('/home/'):])
             if source is None:

@@ -67,7 +67,9 @@ def font_overlay(root=ROOT, include_private=True):
 def write_widget_archive(output, root=ROOT, include_private=True):
     """Create an unsigned archive without reading signing or device settings."""
     app = root / 'app'
+    from personal_assets import personal_overlay
     overlay = font_overlay(root, include_private)
+    overlay.update(personal_overlay(root, include_private))
     with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED, allowZip64=False) as package:
         for source in sorted(app.rglob('*')):
             if source.is_symlink():
